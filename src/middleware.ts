@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
+
+const log = logger.child("middleware");
 
 const PUBLIC_PATHS = [
   "/",
@@ -13,6 +16,8 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/api/auth",
+  "/api/health",
+  "/onboarding",
 ];
 
 const AUTH_PATHS = ["/sign-in", "/sign-up", "/forgot-password", "/reset-password"];
@@ -39,6 +44,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith("/api/health")) {
+    return NextResponse.next();
+  }
+
   if (isAuthPath(pathname) && isAuthenticated) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
@@ -53,13 +62,16 @@ export function middleware(request: NextRequest) {
 
   if (!isPublicPath(pathname) && !pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
     if (!isAuthenticated) {
+      log.info("Unauthenticated access to protected route", { path: pathname });
       const signInUrl = new URL("/sign-in", request.url);
       signInUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(signInUrl);
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set("X-Request-Id", crypto.randomUUID());
+  return response;
 }
 
 export const config = {
