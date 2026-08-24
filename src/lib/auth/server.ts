@@ -34,7 +34,7 @@ export async function requireRestaurant() {
   return {
     user: { id: TEST_USER_ID, name: "Test User", email: "test@test.com", image: null },
     session: { id: "test-session", userId: TEST_USER_ID, expiresAt: new Date(Date.now() + 86400000) },
-    member: { id: "d0000000-0000-0000-0000-000000000001", userId: TEST_USER_ID, restaurantId: TEST_RESTAURANT_ID, role: "owner" },
+    member: { id: "d0000000-0000-0000-0000-000000000001", userId: TEST_USER_ID, restaurantId: TEST_RESTAURANT_ID, role: "owner", branchId: "c0000000-0000-0000-0000-000000000001" },
     restaurant: restaurant!,
   };
 }
