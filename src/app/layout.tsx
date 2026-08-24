@@ -9,9 +9,47 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://restoos.com";
+
 export const metadata: Metadata = {
-  title: "RestoOS - Restaurant Management",
-  description: "Complete restaurant management platform",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: "RestoOS - Restaurant Management Platform",
+    template: "%s | RestoOS",
+  },
+  description:
+    "Complete restaurant management platform with POS, orders, inventory, menu, reservations, employees, and analytics. Run your restaurant from one place.",
+  keywords: [
+    "restaurant management",
+    "restaurant POS",
+    "point of sale",
+    "inventory management",
+    "order management",
+    "reservation system",
+    "restaurant software",
+    "restaurant analytics",
+  ],
+  authors: [{ name: "RestoOS" }],
+  creator: "RestoOS",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: APP_URL,
+    siteName: "RestoOS",
+    title: "RestoOS - Restaurant Management Platform",
+    description:
+      "Complete restaurant management platform with POS, orders, inventory, menu, reservations, employees, and analytics.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RestoOS - Restaurant Management Platform",
+    description:
+      "Complete restaurant management platform with POS, orders, inventory, menu, reservations, employees, and analytics.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

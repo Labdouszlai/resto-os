@@ -139,7 +139,9 @@ export const employees = pgTable("employees", {
   salary: numeric("salary"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("employees_restaurant_id_idx").on(table.restaurantId),
+]);
 
 // =============================================================================
 // Customers
@@ -183,7 +185,10 @@ export const tables = pgTable("tables", {
   status: text("status").notNull().default("available"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("tables_restaurant_id_idx").on(table.restaurantId),
+  index("tables_branch_id_idx").on(table.branchId),
+]);
 
 // =============================================================================
 // Reservations
@@ -235,7 +240,9 @@ export const menuCategories = pgTable("menu_categories", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("menu_categories_restaurant_id_idx").on(table.restaurantId),
+]);
 
 export const modifiers = pgTable("modifiers", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -319,7 +326,9 @@ export const ingredients = pgTable(
     currentStock: numeric("current_stock").notNull().default("0"),
     minimumStock: numeric("minimum_stock").notNull().default("0"),
     costPerUnit: numeric("cost_per_unit").notNull().default("0"),
-    supplierId: uuid("supplier_id"),
+    supplierId: uuid("supplier_id").references(() => suppliers.id, {
+      onDelete: "set null",
+    }),
     expirationDate: date("expiration_date"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -338,7 +347,10 @@ export const recipes = pgTable("recipes", {
     .notNull()
     .references(() => menuItems.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("recipes_restaurant_id_idx").on(table.restaurantId),
+  index("recipes_menu_item_id_idx").on(table.menuItemId),
+]);
 
 export const recipeItems = pgTable("recipe_items", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -391,7 +403,9 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   unitCost: numeric("unit_cost").notNull(),
   subtotal: numeric("subtotal").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("purchase_order_items_po_id_idx").on(table.purchaseOrderId),
+]);
 
 // =============================================================================
 // Inventory
@@ -473,7 +487,9 @@ export const orderItems = pgTable("order_items", {
   subtotal: numeric("subtotal").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("order_items_order_id_idx").on(table.orderId),
+]);
 
 export const orderItemModifiers = pgTable("order_item_modifiers", {
   id: uuid("id").defaultRandom().primaryKey(),

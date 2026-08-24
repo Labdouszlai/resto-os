@@ -31,12 +31,7 @@ function getNotificationIcon(type: string) {
   return typeIcons[type] || { icon: Bell, color: "text-gray-500" };
 }
 
-interface NotificationPanelProps {
-  restaurantId: string;
-  userId: string;
-}
-
-export function NotificationPanel({ restaurantId, userId }: NotificationPanelProps) {
+export function NotificationPanel() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -46,8 +41,8 @@ export function NotificationPanel({ restaurantId, userId }: NotificationPanelPro
     setLoading(true);
     try {
       const [notifs, countRes] = await Promise.all([
-        getNotifications(restaurantId, userId),
-        getUnreadCount(restaurantId, userId),
+        getNotifications(),
+        getUnreadCount(),
       ]);
       if (notifs.success) setNotifications(notifs.notifications);
       if (countRes.success) setUnreadCount(countRes.count);
@@ -58,7 +53,7 @@ export function NotificationPanel({ restaurantId, userId }: NotificationPanelPro
 
   useEffect(() => {
     fetchData();
-  }, [restaurantId, userId]);
+  }, []);
 
   useEffect(() => {
     if (open) fetchData();
@@ -76,7 +71,7 @@ export function NotificationPanel({ restaurantId, userId }: NotificationPanelPro
   }
 
   async function handleMarkAllRead() {
-    await markAllAsRead(restaurantId, userId);
+    await markAllAsRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
   }

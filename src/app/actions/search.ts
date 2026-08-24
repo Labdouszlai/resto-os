@@ -3,7 +3,7 @@
 import { requireRestaurant } from "@/lib/auth/server";
 import { db } from "@/lib/db";
 import { customers, orders, menuItems, employees, suppliers } from "@/lib/db/schema";
-import { or, ilike } from "drizzle-orm";
+import { or, ilike, eq, and } from "drizzle-orm";
 
 export interface SearchResult {
   type: "customer" | "order" | "menu-item" | "employee" | "supplier";
@@ -21,12 +21,14 @@ export async function searchEntities(query: string): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
     const pattern = `%${query}%`;
     
-    // Search customers
     const custResults = await db.query.customers.findMany({
-      where: or(
-        ilike(customers.name, pattern),
-        ilike(customers.email, pattern),
-        ilike(customers.phone, pattern)
+      where: and(
+        eq(customers.restaurantId, restaurant.id),
+        or(
+          ilike(customers.name, pattern),
+          ilike(customers.email, pattern),
+          ilike(customers.phone, pattern)
+        )
       ),
       limit: 5,
     });
@@ -40,9 +42,11 @@ export async function searchEntities(query: string): Promise<SearchResult[]> {
       });
     }
     
-    // Search orders
     const orderResults = await db.query.orders.findMany({
-      where: ilike(orders.orderNumber, pattern),
+      where: and(
+        eq(orders.restaurantId, restaurant.id),
+        ilike(orders.orderNumber, pattern)
+      ),
       limit: 5,
     });
     for (const o of orderResults) {
@@ -50,14 +54,16 @@ export async function searchEntities(query: string): Promise<SearchResult[]> {
         type: "order",
         id: o.id,
         title: o.orderNumber,
-        subtitle: `₹${o.total} - ${o.status}`,
+        subtitle: `${o.total} - ${o.status}`,
         url: `/orders/${o.id}`,
       });
     }
     
-    // Search menu items
     const menuResults = await db.query.menuItems.findMany({
-      where: ilike(menuItems.name, pattern),
+      where: and(
+        eq(menuItems.restaurantId, restaurant.id),
+        ilike(menuItems.name, pattern)
+      ),
       limit: 5,
     });
     for (const m of menuResults) {
@@ -65,16 +71,18 @@ export async function searchEntities(query: string): Promise<SearchResult[]> {
         type: "menu-item",
         id: m.id,
         title: m.name,
-        subtitle: `$${m.price}`,
+        subtitle: m.price,
         url: "/menu",
       });
     }
     
-    // Search employees
     const empResults = await db.query.employees.findMany({
-      where: or(
-        ilike(employees.name, pattern),
-        ilike(employees.email, pattern)
+      where: and(
+        eq(employees.restaurantId, restaurant.id),
+        or(
+          ilike(employees.name, pattern),
+          ilike(employees.email, pattern)
+        )
       ),
       limit: 5,
     });
@@ -88,11 +96,13 @@ export async function searchEntities(query: string): Promise<SearchResult[]> {
       });
     }
     
-    // Search suppliers
     const supResults = await db.query.suppliers.findMany({
-      where: or(
-        ilike(suppliers.name, pattern),
-        ilike(suppliers.company, pattern)
+      where: and(
+        eq(suppliers.restaurantId, restaurant.id),
+        or(
+          ilike(suppliers.name, pattern),
+          ilike(suppliers.company, pattern)
+        )
       ),
       limit: 5,
     });

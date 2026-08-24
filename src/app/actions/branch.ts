@@ -2,20 +2,21 @@
 
 import { db } from "@/lib/db";
 import { branches } from "@/lib/db/schema";
-import { requireRestaurant } from "@/lib/auth/server";
+import { requireRestaurant, requirePermission } from "@/lib/auth/server";
 import { eq, and } from "drizzle-orm";
 
 export async function createBranch(data: {
-  restaurantId: string;
   name: string;
   address?: string;
   phone?: string;
 }) {
   try {
+    const { restaurant } = await requirePermission("branches:create");
+
     const [branch] = await db
       .insert(branches)
       .values({
-        restaurantId: data.restaurantId,
+        restaurantId: restaurant.id,
         name: data.name,
         address: data.address,
         phone: data.phone,
@@ -31,7 +32,6 @@ export async function createBranch(data: {
 
 export async function updateBranch(
   id: string,
-  restaurantId: string,
   data: {
     name?: string;
     address?: string;
@@ -40,10 +40,12 @@ export async function updateBranch(
   }
 ) {
   try {
+    const { restaurant } = await requirePermission("branches:edit");
+
     const [branch] = await db
       .update(branches)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(branches.id, id), eq(branches.restaurantId, restaurantId)))
+      .where(and(eq(branches.id, id), eq(branches.restaurantId, restaurant.id)))
       .returning();
     return { success: true, data: branch };
   } catch (error) {
@@ -52,10 +54,11 @@ export async function updateBranch(
   }
 }
 
-export async function getBranches(restaurantId: string) {
+export async function getBranches() {
   try {
+    const { restaurant } = await requireRestaurant();
     const data = await db.query.branches.findMany({
-      where: eq(branches.restaurantId, restaurantId),
+      where: eq(branches.restaurantId, restaurant.id),
       orderBy: (branches, { asc }) => [asc(branches.name)],
     });
     return { success: true, data };
@@ -65,11 +68,12 @@ export async function getBranches(restaurantId: string) {
   }
 }
 
-export async function deleteBranch(id: string, restaurantId: string) {
+export async function deleteBranch(id: string) {
   try {
+    const { restaurant } = await requirePermission("branches:delete");
     await db
       .delete(branches)
-      .where(and(eq(branches.id, id), eq(branches.restaurantId, restaurantId)));
+      .where(and(eq(branches.id, id), eq(branches.restaurantId, restaurant.id)));
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete branch";

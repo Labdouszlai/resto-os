@@ -117,7 +117,7 @@ export async function getSupplier(supplierId: string) {
     if (!supplier) throw new Error("Supplier not found");
 
     const purchaseHistory = await db.query.purchaseOrders.findMany({
-      where: eq(purchaseOrders.supplierId, supplierId),
+      where: and(eq(purchaseOrders.supplierId, supplierId), eq(purchaseOrders.restaurantId, restaurant.id)),
       orderBy: [desc(purchaseOrders.createdAt)],
       limit: 50,
     });

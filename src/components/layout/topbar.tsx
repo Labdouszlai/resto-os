@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, Search, ChevronDown, LogOut, User, Settings, Command } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
@@ -25,7 +25,6 @@ import { Sidebar } from "./sidebar";
 import { SearchDialog } from "./search-dialog";
 import { NotificationPanel } from "./notification-panel";
 import { signOutAction } from "@/app/actions/auth";
-import { getCurrentRestaurant } from "@/app/actions/restaurant";
 
 interface TopbarProps {
   restaurantName?: string;
@@ -36,15 +35,6 @@ interface TopbarProps {
 export function Topbar({ restaurantName = "My Restaurant", userName, userImage }: TopbarProps) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [restaurantId, setRestaurantId] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
-
-  useEffect(() => {
-    getCurrentRestaurant().then((res) => {
-      if (res?.restaurant?.id) setRestaurantId(res.restaurant.id);
-      if (res?.userId) setUserId(res.userId);
-    }).catch(() => {});
-  }, []);
 
   async function handleSignOut() {
     await signOutAction();
@@ -101,9 +91,7 @@ export function Topbar({ restaurantName = "My Restaurant", userName, userImage }
             <span className="sr-only">Search</span>
           </Button>
 
-          {restaurantId && userId && (
-            <NotificationPanel restaurantId={restaurantId} userId={userId} />
-          )}
+          <NotificationPanel />
 
           <ThemeToggle />
 

@@ -113,7 +113,7 @@ export async function getCustomer(customerId: string) {
     if (!customer) throw new Error("Customer not found");
 
     const orderHistory = await db.query.orders.findMany({
-      where: eq(orders.customerId, customerId),
+      where: and(eq(orders.customerId, customerId), eq(orders.restaurantId, restaurant.id)),
       orderBy: [desc(orders.createdAt)],
       limit: 50,
     });

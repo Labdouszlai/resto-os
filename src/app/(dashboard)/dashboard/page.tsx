@@ -19,10 +19,13 @@ import {
   getPaymentMethodsDistribution,
   getOrderStatusDistribution,
 } from "@/lib/queries/dashboard";
-import { requireAuth, getActiveRestaurant } from "@/lib/auth/server";
+import { requireAuth } from "@/lib/auth/server";
 
 async function DashboardContent({ dateFilter }: { dateFilter: string }) {
-  const restaurantId = "b0000000-0000-0000-0000-000000000001";
+  const { restaurant } = await requireAuth();
+  if (!restaurant) redirect("/sign-in");
+
+  const restaurantId = restaurant.id;
 
   const [
     stats,

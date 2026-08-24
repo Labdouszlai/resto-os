@@ -1,32 +1,25 @@
-"use client";
+import { getSessionOrNull } from "@/lib/auth/server";
+import { redirect } from "next/navigation";
+import DashboardLayoutClient from "./layout-client";
 
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Topbar } from "@/components/layout/topbar";
-
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-  restaurantName?: string;
-  userName?: string;
-  userImage?: string;
-}
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
-  restaurantName,
-  userName,
-  userImage,
-}: DashboardLayoutProps) {
+}: {
+  children: React.ReactNode;
+}) {
+  const ctx = await getSessionOrNull();
+
+  if (!ctx?.user) {
+    redirect("/sign-in");
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      <AppSidebar />
-      <div className="flex flex-col flex-1 min-w-0">
-        <Topbar
-          restaurantName="Test Restaurant"
-          userName="Test User"
-          userImage={undefined}
-        />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
+    <DashboardLayoutClient
+      restaurantName={ctx.restaurant?.name}
+      userName={ctx.user.name}
+      userImage={ctx.user.image ?? undefined}
+    >
+      {children}
+    </DashboardLayoutClient>
   );
 }

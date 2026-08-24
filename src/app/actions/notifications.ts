@@ -4,10 +4,12 @@ import { db } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireRestaurant } from "@/lib/auth/server";
 
-export async function getNotifications(restaurantId: string, userId?: string) {
+export async function getNotifications(userId?: string) {
   try {
-    const conditions = [eq(notifications.restaurantId, restaurantId)];
+    const { restaurant } = await requireRestaurant();
+    const conditions = [eq(notifications.restaurantId, restaurant.id)];
     if (userId) {
       conditions.push(eq(notifications.userId, userId));
     }
@@ -27,10 +29,11 @@ export async function getNotifications(restaurantId: string, userId?: string) {
 
 export async function markAsRead(notificationId: string) {
   try {
+    const { restaurant } = await requireRestaurant();
     const [updated] = await db
       .update(notifications)
       .set({ isRead: true })
-      .where(eq(notifications.id, notificationId))
+      .where(and(eq(notifications.id, notificationId), eq(notifications.restaurantId, restaurant.id)))
       .returning();
 
     if (!updated) throw new Error("Notification not found");
@@ -43,10 +46,11 @@ export async function markAsRead(notificationId: string) {
   }
 }
 
-export async function markAllAsRead(restaurantId: string, userId?: string) {
+export async function markAllAsRead(userId?: string) {
   try {
+    const { restaurant } = await requireRestaurant();
     const conditions = [
-      eq(notifications.restaurantId, restaurantId),
+      eq(notifications.restaurantId, restaurant.id),
       eq(notifications.isRead, false),
     ];
     if (userId) {
@@ -67,7 +71,6 @@ export async function markAllAsRead(restaurantId: string, userId?: string) {
 }
 
 export async function createNotification(
-  restaurantId: string,
   data: {
     userId?: string;
     title: string;
@@ -76,10 +79,11 @@ export async function createNotification(
   }
 ) {
   try {
+    const { restaurant } = await requireRestaurant();
     const [notification] = await db
       .insert(notifications)
       .values({
-        restaurantId,
+        restaurantId: restaurant.id,
         userId: data.userId || null,
         title: data.title,
         message: data.message,
@@ -94,10 +98,11 @@ export async function createNotification(
   }
 }
 
-export async function getUnreadCount(restaurantId: string, userId?: string) {
+export async function getUnreadCount(userId?: string) {
   try {
+    const { restaurant } = await requireRestaurant();
     const conditions = [
-      eq(notifications.restaurantId, restaurantId),
+      eq(notifications.restaurantId, restaurant.id),
       eq(notifications.isRead, false),
     ];
     if (userId) {
