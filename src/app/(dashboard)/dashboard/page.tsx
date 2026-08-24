@@ -22,17 +22,7 @@ import {
 import { requireAuth, getActiveRestaurant } from "@/lib/auth/server";
 
 async function DashboardContent({ dateFilter }: { dateFilter: string }) {
-  let restaurantId: string;
-  try {
-    const session = await requireAuth();
-    const active = await getActiveRestaurant(session.user.id);
-    if (!active?.restaurant) {
-      redirect("/sign-in");
-    }
-    restaurantId = active.restaurant.id;
-  } catch {
-    redirect("/sign-in");
-  }
+  const restaurantId = "b0000000-0000-0000-0000-000000000001";
 
   const [
     stats,

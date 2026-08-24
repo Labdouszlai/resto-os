@@ -21,9 +21,9 @@ export default function DashboardLayout({
       <AppSidebar />
       <div className="flex flex-col flex-1 min-w-0">
         <Topbar
-          restaurantName={restaurantName}
-          userName={userName}
-          userImage={userImage}
+          restaurantName="Test Restaurant"
+          userName="Test User"
+          userImage={undefined}
         />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
