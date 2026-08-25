@@ -71,11 +71,11 @@ export default function LandingPage() {
             Point of sale, orders, inventory, menu management, reservations, employees, and analytics — all in a single, beautiful platform.
           </p>
           <div className="flex items-center justify-center gap-3 mt-10">
-            <Link href="/sign-up" className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
-              Book a Demo <ArrowRight className="w-4 h-4" />
+            <Link href="/demo" className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+              Try Live Demo <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/sign-in" className="border border-border px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
-              Try Live Demo
+            <Link href="/sign-up" className="border border-border px-6 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
+              Get Started
             </Link>
           </div>
         </div>
@@ -176,8 +176,11 @@ export default function LandingPage() {
         <h2 className="text-3xl font-bold tracking-tight">Ready to get started?</h2>
         <p className="text-muted-foreground mt-3 max-w-md mx-auto">Create your free account in seconds and start managing your restaurant today.</p>
         <div className="flex items-center justify-center gap-4 mt-8">
-          <Link href="/sign-up" className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
-            Create account <ArrowRight className="w-4 h-4" />
+          <Link href="/demo" className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+            Try Live Demo <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link href="/sign-up" className="border border-border px-8 py-3 rounded-xl font-medium text-sm hover:bg-muted transition-colors">
+            Create Account
           </Link>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-sm text-muted-foreground">
