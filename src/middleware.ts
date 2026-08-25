@@ -60,7 +60,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (!isPublicPath(pathname) && !pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+  if (!isPublicPath(pathname) && !pathname.startsWith("/api") && !pathname.startsWith("/_next") && !pathname.startsWith("/demo")) {
     if (!isAuthenticated) {
       log.info("Unauthenticated access to protected route", { path: pathname });
       const signInUrl = new URL("/sign-in", request.url);
