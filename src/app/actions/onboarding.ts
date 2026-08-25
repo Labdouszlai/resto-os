@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants, members, branches } from "@/lib/db/schema";
 import { slugify } from "@/lib/slugify";
+import { eq } from "drizzle-orm";
 
 interface OnboardingInput {
   restaurantName: string;
@@ -25,6 +26,14 @@ export async function completeOnboardingAction(input: OnboardingInput) {
 
     if (!session?.user) {
       return { success: false, error: "Not authenticated" };
+    }
+
+    const existingMember = await db.query.members.findFirst({
+      where: eq(members.userId, session.user.id),
+    });
+
+    if (existingMember) {
+      return { success: true, restaurantId: existingMember.restaurantId };
     }
 
     const restaurantSlug = slugify(input.restaurantName);

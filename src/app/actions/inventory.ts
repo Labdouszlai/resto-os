@@ -161,7 +161,7 @@ export async function adjustStock(ingredientId: string, type: string, quantity: 
     await db
       .update(ingredients)
       .set({ currentStock: newStock.toString(), updatedAt: new Date() })
-      .where(eq(ingredients.id, ingredientId));
+      .where(and(eq(ingredients.id, ingredientId), eq(ingredients.restaurantId, restaurant.id)));
 
     await db.insert(inventoryMovements).values({
       restaurantId: restaurant.id,

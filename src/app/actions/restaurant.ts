@@ -69,8 +69,9 @@ export async function createRestaurant(data: {
   timezone?: string;
 }) {
   try {
+    const { restaurant } = await requirePermission("restaurant:manage");
     const slug = slugify(data.name);
-    const [restaurant] = await db
+    const [newRestaurant] = await db
       .insert(restaurants)
       .values({
         name: data.name,
@@ -85,7 +86,7 @@ export async function createRestaurant(data: {
         timezone: data.timezone,
       })
       .returning();
-    return { success: true, data: restaurant };
+    return { success: true, data: newRestaurant };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create restaurant";
     return { success: false, error: message };

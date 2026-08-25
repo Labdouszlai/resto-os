@@ -85,35 +85,37 @@ export async function receivePurchaseOrder(poId: string) {
 
     if (!po) throw new Error("Purchase order not found");
 
-    for (const item of po.items) {
-      const ingredient = await db.query.ingredients.findFirst({
-        where: eq(ingredients.id, item.ingredientId),
-      });
-
-      if (ingredient) {
-        const currentStock = toNumber(ingredient.currentStock);
-        const receivedQty = toNumber(item.quantity);
-
-        await db
-          .update(ingredients)
-          .set({ currentStock: (currentStock + receivedQty).toString(), updatedAt: new Date() })
-          .where(eq(ingredients.id, item.ingredientId));
-
-        await db.insert(inventoryMovements).values({
-          restaurantId: restaurant.id,
-          ingredientId: item.ingredientId,
-          type: "addition",
-          quantity: receivedQty.toString(),
-          referenceId: poId,
-          notes: `PO #${po.id.slice(0, 8)} received`,
+    await db.transaction(async (tx) => {
+      for (const item of po.items) {
+        const ingredient = await tx.query.ingredients.findFirst({
+          where: and(eq(ingredients.id, item.ingredientId), eq(ingredients.restaurantId, restaurant.id)),
         });
-      }
-    }
 
-    await db
-      .update(purchaseOrders)
-      .set({ status: "received", updatedAt: new Date() })
-      .where(eq(purchaseOrders.id, poId));
+        if (ingredient) {
+          const currentStock = toNumber(ingredient.currentStock);
+          const receivedQty = toNumber(item.quantity);
+
+          await tx
+            .update(ingredients)
+            .set({ currentStock: (currentStock + receivedQty).toString(), updatedAt: new Date() })
+            .where(and(eq(ingredients.id, item.ingredientId), eq(ingredients.restaurantId, restaurant.id)));
+
+          await tx.insert(inventoryMovements).values({
+            restaurantId: restaurant.id,
+            ingredientId: item.ingredientId,
+            type: "addition",
+            quantity: receivedQty.toString(),
+            referenceId: poId,
+            notes: `PO #${po.id.slice(0, 8)} received`,
+          });
+        }
+      }
+
+      await tx
+        .update(purchaseOrders)
+        .set({ status: "received", updatedAt: new Date() })
+        .where(and(eq(purchaseOrders.id, poId), eq(purchaseOrders.restaurantId, restaurant.id)));
+    });
 
     revalidatePath("/purchases");
     revalidatePath("/inventory");

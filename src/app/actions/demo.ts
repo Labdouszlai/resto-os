@@ -12,6 +12,10 @@ const DEMO_PASSWORD = "demo1234";
 
 export async function demoLoginAction() {
   try {
+    if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO !== "true") {
+      return { success: false, error: "Demo is not available in production" };
+    }
+
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, DEMO_EMAIL),
     });

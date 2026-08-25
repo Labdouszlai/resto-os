@@ -48,12 +48,7 @@ export async function requireAuth(): Promise<AuthContext> {
     });
 
     if (!member) {
-      return {
-        user: { id: sessionData.user.id, name: sessionData.user.name, email: sessionData.user.email, image: sessionData.user.image ?? null },
-        session: { id: sessionData.session.id, userId: sessionData.session.userId, expiresAt: sessionData.session.expiresAt },
-        member: null as unknown as AuthMember,
-        restaurant: null as unknown as AuthRestaurant,
-      };
+      redirect("/sign-in");
     }
 
     const restaurant = await db.query.restaurants.findFirst({
@@ -135,11 +130,20 @@ export async function getSessionOrNull(): Promise<AuthContext | null> {
       where: eq(restaurants.id, member.restaurantId),
     });
 
+    if (!restaurant) {
+      return {
+        user: { id: sessionData.user.id, name: sessionData.user.name, email: sessionData.user.email, image: sessionData.user.image ?? null },
+        session: { id: sessionData.session.id, userId: sessionData.session.userId, expiresAt: sessionData.session.expiresAt },
+        member: null as unknown as AuthMember,
+        restaurant: null as unknown as AuthRestaurant,
+      };
+    }
+
     return {
       user: { id: sessionData.user.id, name: sessionData.user.name, email: sessionData.user.email, image: sessionData.user.image ?? null },
       session: { id: sessionData.session.id, userId: sessionData.session.userId, expiresAt: sessionData.session.expiresAt },
       member: { id: member.id, userId: member.userId, restaurantId: member.restaurantId, role: member.role, branchId: member.branchId },
-      restaurant: restaurant!,
+      restaurant,
     };
   } catch {
     return null;

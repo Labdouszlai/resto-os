@@ -83,7 +83,7 @@ export async function createOrder(data: {
       if (item.modifiers && item.modifiers.length > 0) {
         for (const modifierId of item.modifiers) {
           const modifier = await db.query.modifiers.findFirst({
-            where: eq(modifiers.id, modifierId),
+            where: and(eq(modifiers.id, modifierId), eq(modifiers.restaurantId, restaurant.id)),
           });
           if (modifier) {
             await db.insert(orderItemModifiers).values({
@@ -100,7 +100,7 @@ export async function createOrder(data: {
       await db
         .update(tables)
         .set({ status: "occupied", updatedAt: new Date() })
-        .where(eq(tables.id, data.tableId));
+        .where(and(eq(tables.id, data.tableId), eq(tables.restaurantId, restaurant.id)));
     }
 
     revalidatePath("/orders");
@@ -163,7 +163,7 @@ export async function cancelOrder(orderId: string) {
       await db
         .update(tables)
         .set({ status: "available", updatedAt: new Date() })
-        .where(eq(tables.id, updated.tableId));
+        .where(and(eq(tables.id, updated.tableId), eq(tables.restaurantId, restaurant.id)));
     }
 
     await db.insert(notifications).values({
@@ -308,62 +308,64 @@ export async function completeOrder(orderId: string) {
 
     if (!order) throw new Error("Order not found");
 
-    for (const item of order.items) {
-      const recipe = await db.query.recipes.findFirst({
-        where: eq(recipes.menuItemId, item.menuItemId),
-        with: {
-          items: true,
-        },
-      }) as (typeof recipes.$inferSelect & { items: Array<typeof recipeItems.$inferSelect> }) | undefined;
+    await db.transaction(async (tx) => {
+      for (const item of order.items) {
+        const recipe = await tx.query.recipes.findFirst({
+          where: and(eq(recipes.menuItemId, item.menuItemId), eq(recipes.restaurantId, restaurant.id)),
+          with: {
+            items: true,
+          },
+        }) as (typeof recipes.$inferSelect & { items: Array<typeof recipeItems.$inferSelect> }) | undefined;
 
-      if (recipe) {
-        for (const recipeItem of recipe.items) {
-          const ingredient = await db.query.ingredients.findFirst({
-            where: eq(ingredients.id, recipeItem.ingredientId),
-          });
-
-          if (ingredient) {
-            const usedQty = toNumber(recipeItem.quantity) * item.quantity;
-            const newStock = toNumber(ingredient.currentStock) - usedQty;
-
-            await db
-              .update(ingredients)
-              .set({
-                currentStock: Math.max(0, newStock).toString(),
-                updatedAt: new Date(),
-              })
-              .where(eq(ingredients.id, recipeItem.ingredientId));
-
-            await db.insert(inventoryMovements).values({
-              restaurantId: restaurant.id,
-              ingredientId: recipeItem.ingredientId,
-              type: "deduction",
-              quantity: usedQty.toString(),
-              referenceId: orderId,
-              notes: `Order ${order.orderNumber} - ${item.quantity}x`,
+        if (recipe) {
+          for (const recipeItem of recipe.items) {
+            const ingredient = await tx.query.ingredients.findFirst({
+              where: and(eq(ingredients.id, recipeItem.ingredientId), eq(ingredients.restaurantId, restaurant.id)),
             });
+
+            if (ingredient) {
+              const usedQty = toNumber(recipeItem.quantity) * item.quantity;
+              const newStock = toNumber(ingredient.currentStock) - usedQty;
+
+              await tx
+                .update(ingredients)
+                .set({
+                  currentStock: Math.max(0, newStock).toString(),
+                  updatedAt: new Date(),
+                })
+                .where(and(eq(ingredients.id, recipeItem.ingredientId), eq(ingredients.restaurantId, restaurant.id)));
+
+              await tx.insert(inventoryMovements).values({
+                restaurantId: restaurant.id,
+                ingredientId: recipeItem.ingredientId,
+                type: "deduction",
+                quantity: usedQty.toString(),
+                referenceId: orderId,
+                notes: `Order ${order.orderNumber} - ${item.quantity}x`,
+              });
+            }
           }
         }
       }
-    }
 
-    if (order.tableId) {
-      await db
-        .update(tables)
-        .set({ status: "available", updatedAt: new Date() })
-        .where(eq(tables.id, order.tableId));
-    }
+      if (order.tableId) {
+        await tx
+          .update(tables)
+          .set({ status: "available", updatedAt: new Date() })
+          .where(and(eq(tables.id, order.tableId), eq(tables.restaurantId, restaurant.id)));
+      }
 
-    await db
-      .update(orders)
-      .set({ status: "completed", updatedAt: new Date() })
-      .where(eq(orders.id, orderId));
+      await tx
+        .update(orders)
+        .set({ status: "completed", updatedAt: new Date() })
+        .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)));
 
-    await db.insert(notifications).values({
-      restaurantId: restaurant.id,
-      title: `Order ${order.orderNumber} completed`,
-      message: "Order has been completed and inventory updated",
-      type: "order_completed",
+      await tx.insert(notifications).values({
+        restaurantId: restaurant.id,
+        title: `Order ${order.orderNumber} completed`,
+        message: "Order has been completed and inventory updated",
+        type: "order_completed",
+      });
     });
 
     revalidatePath("/orders");

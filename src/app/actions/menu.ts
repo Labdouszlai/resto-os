@@ -343,12 +343,12 @@ export async function createRecipe(
     const { restaurant } = await requirePermission("menu:create");
 
     const existing = await db.query.recipes.findFirst({
-      where: eq(recipes.menuItemId, menuItemId),
+      where: and(eq(recipes.menuItemId, menuItemId), eq(recipes.restaurantId, restaurant.id)),
     });
 
     if (existing) {
       await db.delete(recipeItems).where(eq(recipeItems.recipeId, existing.id));
-      await db.delete(recipes).where(eq(recipes.id, existing.id));
+      await db.delete(recipes).where(and(eq(recipes.id, existing.id), eq(recipes.restaurantId, restaurant.id)));
     }
 
     const [recipe] = await db

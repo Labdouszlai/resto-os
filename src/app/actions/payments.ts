@@ -57,7 +57,7 @@ export async function refundPayment(paymentId: string) {
     const [updated] = await db
       .update(payments)
       .set({ status: "refunded", updatedAt: new Date() })
-      .where(eq(payments.id, paymentId))
+      .where(and(eq(payments.id, paymentId), eq(payments.restaurantId, restaurant.id)))
       .returning();
 
     revalidatePath("/orders");

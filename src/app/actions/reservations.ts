@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { reservations, tables } from "@/lib/db/schema";
-import { requirePermission } from "@/lib/auth/server";
+import { requirePermission, requireRestaurant } from "@/lib/auth/server";
 import { eq, and, desc, between } from "drizzle-orm";
 import { reservationSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
@@ -19,12 +19,15 @@ export async function checkTableAvailability(
   excludeReservationId?: string
 ) {
   try {
+    const { restaurant } = await requireRestaurant();
+
     const activeStatuses = ["pending", "confirmed", "seated"];
 
     const existingReservations = await db.query.reservations.findMany({
       where: and(
         eq(reservations.tableId, tableId),
         eq(reservations.date, date),
+        eq(reservations.restaurantId, restaurant.id),
       ),
     });
 
@@ -92,7 +95,7 @@ export async function createReservation(data: {
       await db
         .update(tables)
         .set({ status: "reserved", updatedAt: new Date() })
-        .where(eq(tables.id, parsed.tableId));
+        .where(and(eq(tables.id, parsed.tableId), eq(tables.restaurantId, restaurant.id)));
     }
 
     revalidatePath("/reservations");
@@ -168,13 +171,13 @@ export async function cancelReservation(reservationId: string) {
     await db
       .update(reservations)
       .set({ status: "cancelled", updatedAt: new Date() })
-      .where(eq(reservations.id, reservationId));
+      .where(and(eq(reservations.id, reservationId), eq(reservations.restaurantId, restaurant.id)));
 
     if (reservation.tableId) {
       await db
         .update(tables)
         .set({ status: "available", updatedAt: new Date() })
-        .where(eq(tables.id, reservation.tableId));
+        .where(and(eq(tables.id, reservation.tableId), eq(tables.restaurantId, restaurant.id)));
     }
 
     revalidatePath("/reservations");
@@ -201,7 +204,7 @@ export async function seatReservation(reservationId: string) {
       await db
         .update(tables)
         .set({ status: "occupied", updatedAt: new Date() })
-        .where(eq(tables.id, updated.tableId));
+        .where(and(eq(tables.id, updated.tableId), eq(tables.restaurantId, restaurant.id)));
     }
 
     revalidatePath("/reservations");
@@ -225,13 +228,13 @@ export async function completeReservation(reservationId: string) {
     await db
       .update(reservations)
       .set({ status: "completed", updatedAt: new Date() })
-      .where(eq(reservations.id, reservationId));
+      .where(and(eq(reservations.id, reservationId), eq(reservations.restaurantId, restaurant.id)));
 
     if (reservation.tableId) {
       await db
         .update(tables)
         .set({ status: "available", updatedAt: new Date() })
-        .where(eq(tables.id, reservation.tableId));
+        .where(and(eq(tables.id, reservation.tableId), eq(tables.restaurantId, restaurant.id)));
     }
 
     revalidatePath("/reservations");

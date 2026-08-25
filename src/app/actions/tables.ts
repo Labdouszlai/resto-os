@@ -130,7 +130,7 @@ export async function assignOrder(tableId: string, orderId: string) {
     await db
       .update(tables)
       .set({ status: "occupied", updatedAt: new Date() })
-      .where(eq(tables.id, tableId));
+      .where(and(eq(tables.id, tableId), eq(tables.restaurantId, restaurant.id)));
 
     revalidatePath("/tables");
     revalidatePath("/orders");
