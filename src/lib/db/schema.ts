@@ -30,6 +30,8 @@ export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   expiresAt: timestamp("expires_at").notNull(),
   token: text("token").notNull().unique(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   userId: text("user_id")
@@ -46,6 +48,12 @@ export const accounts = pgTable("accounts", {
     .references(() => users.id, { onDelete: "cascade" }),
   password: text("password"),
   issuer: text("issuer"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
