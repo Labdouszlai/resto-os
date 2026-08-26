@@ -3,8 +3,23 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants, members, branches } from "@/lib/db/schema";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { slugify } from "@/lib/slugify";
+
+async function setSessionCookies(authHeaders: Headers) {
+  const setCookies = authHeaders.getSetCookie?.() ?? [];
+  const c = await cookies();
+  for (const raw of setCookies) {
+    const [pair] = raw.split(";");
+    const [name, value] = pair.split("=");
+    c.set(name.trim(), value.trim(), {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+}
 
 export async function signInAction(email: string, password: string) {
   try {
@@ -15,8 +30,14 @@ export async function signInAction(email: string, password: string) {
         password,
       },
       headers: h,
+      asResponse: true,
     });
-    return { success: true, data: result };
+
+    if (result instanceof Response) {
+      await setSessionCookies(result.headers);
+    }
+
+    return { success: true, data: result instanceof Response ? await result.json() : result };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign in failed";
     return { success: false, error: message };
@@ -37,7 +58,16 @@ export async function signUpAction(
         password,
       },
       headers: h,
+      asResponse: true,
     });
+
+    let userData: any;
+    if (result instanceof Response) {
+      await setSessionCookies(result.headers);
+      userData = await result.json();
+    } else {
+      userData = result;
+    }
 
     const restaurantSlug = slugify(name + "'s Restaurant");
 
@@ -60,13 +90,13 @@ export async function signUpAction(
       .returning();
 
     await db.insert(members).values({
-      userId: result.user.id,
+      userId: userData.user.id,
       restaurantId: restaurant.id,
       role: "owner",
       branchId: branch.id,
     });
 
-    return { success: true, data: result };
+    return { success: true, data: userData };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign up failed";
     return { success: false, error: message };
@@ -78,6 +108,8 @@ export async function signOutAction() {
     await auth.api.signOut({
       headers: await headers(),
     });
+    const c = await cookies();
+    c.delete("better-auth.session_token");
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign out failed";
