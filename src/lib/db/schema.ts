@@ -17,7 +17,7 @@ import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 // =============================================================================
 
 export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
@@ -32,7 +32,7 @@ export const sessions = pgTable("sessions", {
   token: text("token").notNull().unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
 });
@@ -41,10 +41,11 @@ export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   password: text("password"),
+  issuer: text("issuer"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -96,7 +97,7 @@ export const members = pgTable(
   "members",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     restaurantId: uuid("restaurant_id")
@@ -572,7 +573,7 @@ export const notifications = pgTable(
     restaurantId: uuid("restaurant_id")
       .notNull()
       .references(() => restaurants.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").references(() => users.id, {
+    userId: text("user_id").references(() => users.id, {
       onDelete: "cascade",
     }),
     title: text("title").notNull(),
