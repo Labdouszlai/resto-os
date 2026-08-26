@@ -23,22 +23,23 @@ import {
   Coffee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/i18n/provider";
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "POS", href: "/pos", icon: ShoppingCart },
-  { name: "Orders", href: "/orders", icon: ClipboardList },
-  { name: "Tables", href: "/tables", icon: Square },
-  { name: "Reservations", href: "/reservations", icon: Calendar },
-  { name: "Menu", href: "/menu", icon: UtensilsCrossed },
-  { name: "Customers", href: "/customers", icon: Users },
-  { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Suppliers", href: "/suppliers", icon: Truck },
-  { name: "Purchases", href: "/purchases", icon: Receipt },
-  { name: "Expenses", href: "/expenses", icon: Wallet },
-  { name: "Employees", href: "/employees", icon: UserCog },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
+const navigationKeys = [
+  { key: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { key: "nav.pos", href: "/pos", icon: ShoppingCart },
+  { key: "nav.orders", href: "/orders", icon: ClipboardList },
+  { key: "nav.tables", href: "/tables", icon: Square },
+  { key: "nav.reservations", href: "/reservations", icon: Calendar },
+  { key: "nav.menu", href: "/menu", icon: UtensilsCrossed },
+  { key: "nav.customers", href: "/customers", icon: Users },
+  { key: "nav.inventory", href: "/inventory", icon: Package },
+  { key: "nav.suppliers", href: "/suppliers", icon: Truck },
+  { key: "nav.purchases", href: "/purchases", icon: Receipt },
+  { key: "nav.expenses", href: "/expenses", icon: Wallet },
+  { key: "nav.employees", href: "/employees", icon: UserCog },
+  { key: "nav.reports", href: "/reports", icon: BarChart3 },
+  { key: "nav.settings", href: "/settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -48,6 +49,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   return (
     <aside
@@ -71,10 +73,11 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
       <nav className="flex-1 overflow-y-auto py-2 px-1.5">
         <ul className="space-y-px">
-          {navigation.map((item) => {
+          {navigationKeys.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const label = t(item.key);
             return (
-              <li key={item.name}>
+              <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(
@@ -84,10 +87,10 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     collapsed && "justify-center px-0"
                   )}
-                  title={collapsed ? item.name : undefined}
+                  title={collapsed ? label : undefined}
                 >
                   <item.icon className="w-4 h-4 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
-                  {!collapsed && <span className="truncate">{item.name}</span>}
+                  {!collapsed && <span className="truncate">{label}</span>}
                 </Link>
               </li>
             );
@@ -111,7 +114,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             ) : (
               <>
                 <ChevronLeft className="w-4 h-4" />
-                <span className="text-xs">Collapse</span>
+                <span className="text-xs">{t("common.close")}</span>
               </>
             )}
           </Button>

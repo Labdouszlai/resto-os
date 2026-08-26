@@ -11,17 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInAction } from "@/app/actions/auth";
-
-const signInSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type SignInForm = z.infer<typeof signInSchema>;
+import { useTranslation } from "@/i18n/provider";
 
 export default function SignInPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+
+  const signInSchema = z.object({
+    email: z.string().email(t("auth.enterValidEmail")),
+    password: z.string().min(6, t("auth.passwordMinLength")),
+  });
+
+  type SignInForm = z.infer<typeof signInSchema>;
 
   const {
     register,
@@ -36,13 +38,13 @@ export default function SignInPage() {
     try {
       const result = await signInAction(data.email, data.password);
       if (result.success) {
-        toast.success("Signed in successfully");
+        toast.success(t("auth.signedInSuccessfully"));
         router.push("/dashboard");
       } else {
-        toast.error(result.error || "Invalid email or password");
+        toast.error(result.error || t("auth.invalidCredentials"));
       }
     } catch {
-      toast.error("An unexpected error occurred");
+      toast.error(t("auth.unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -51,15 +53,15 @@ export default function SignInPage() {
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-foreground">Sign in</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("auth.signIn")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Enter your credentials to access your account
+          {t("auth.signInDescription")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("auth.email")}</Label>
           <Input
             id="email"
             type="email"
@@ -73,11 +75,11 @@ export default function SignInPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("auth.password")}</Label>
           <Input
             id="password"
             type="password"
-            placeholder="Enter your password"
+            placeholder={t("auth.enterPassword")}
             disabled={loading}
             {...register("password")}
           />
@@ -88,19 +90,19 @@ export default function SignInPage() {
 
         <div className="flex justify-end">
           <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground">
-            Forgot password?
+            {t("auth.forgotPassword")}
           </Link>
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? t("auth.signingIn") : t("auth.signIn")}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        {t("auth.dontHaveAccount")}{" "}
         <Link href="/sign-up" className="font-medium text-primary hover:underline">
-          Create one
+          {t("auth.createOne")}
         </Link>
       </p>
     </div>

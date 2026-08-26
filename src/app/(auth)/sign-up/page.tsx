@@ -11,24 +11,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUpAction } from "@/app/actions/auth";
-
-const signUpSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type SignUpForm = z.infer<typeof signUpSchema>;
+import { useTranslation } from "@/i18n/provider";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+
+  const signUpSchema = z
+    .object({
+      name: z.string().min(2, t("auth.nameMinLength")),
+      email: z.string().email(t("auth.enterValidEmail")),
+      password: z.string().min(6, t("auth.passwordMinLength")),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("auth.passwordsDontMatch"),
+      path: ["confirmPassword"],
+    });
+
+  type SignUpForm = z.infer<typeof signUpSchema>;
 
   const {
     register,
@@ -43,13 +45,13 @@ export default function SignUpPage() {
     try {
       const result = await signUpAction(data.name, data.email, data.password);
       if (result.success) {
-        toast.success("Account created successfully");
+        toast.success(t("auth.accountCreatedSuccessfully"));
         router.push("/dashboard");
       } else {
-        toast.error(result.error || "Failed to create account");
+        toast.error(result.error || t("auth.failedToCreateAccount"));
       }
     } catch {
-      toast.error("An unexpected error occurred");
+      toast.error(t("auth.unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -58,15 +60,15 @@ export default function SignUpPage() {
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-foreground">Create account</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("auth.createAccount")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Get started with RestoOS for your restaurant
+          {t("auth.signUpDescription")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Full name</Label>
+          <Label htmlFor="name">{t("auth.fullName")}</Label>
           <Input
             id="name"
             type="text"
@@ -80,7 +82,7 @@ export default function SignUpPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("auth.email")}</Label>
           <Input
             id="email"
             type="email"
@@ -94,11 +96,11 @@ export default function SignUpPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("auth.password")}</Label>
           <Input
             id="password"
             type="password"
-            placeholder="At least 6 characters"
+            placeholder={t("auth.atLeast6Chars")}
             disabled={loading}
             {...register("password")}
           />
@@ -108,11 +110,11 @@ export default function SignUpPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
           <Input
             id="confirmPassword"
             type="password"
-            placeholder="Confirm your password"
+            placeholder={t("auth.confirmYourPassword")}
             disabled={loading}
             {...register("confirmPassword")}
           />
@@ -124,14 +126,14 @@ export default function SignUpPage() {
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Creating account..." : "Create account"}
+          {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        {t("auth.alreadyHaveAccount")}{" "}
         <Link href="/sign-in" className="font-medium text-primary hover:underline">
-          Sign in
+          {t("auth.signIn")}
         </Link>
       </p>
     </div>

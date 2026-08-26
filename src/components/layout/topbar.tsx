@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, Search, ChevronDown, LogOut, User, Settings, Command } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { LanguageSwitcher } from "./language-switcher";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -25,6 +26,7 @@ import { Sidebar } from "./sidebar";
 import { SearchDialog } from "./search-dialog";
 import { NotificationPanel } from "./notification-panel";
 import { signOutAction } from "@/app/actions/auth";
+import { useTranslation } from "@/i18n/provider";
 
 interface TopbarProps {
   restaurantName?: string;
@@ -34,6 +36,7 @@ interface TopbarProps {
 
 export function Topbar({ restaurantName = "My Restaurant", userName, userImage }: TopbarProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   async function handleSignOut() {
@@ -60,11 +63,11 @@ export function Topbar({ restaurantName = "My Restaurant", userName, userImage }
               render={<Button variant="ghost" size="icon-sm" className="lg:hidden" />}
             >
               <Menu className="w-5 h-5" />
-              <span className="sr-only">Toggle menu</span>
+              <span className="sr-only">{t("topbar.search")}</span>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-60">
               <SheetHeader>
-                <SheetTitle>Menu</SheetTitle>
+                <SheetTitle>{t("topbar.search")}</SheetTitle>
               </SheetHeader>
               <Sidebar />
             </SheetContent>
@@ -88,10 +91,12 @@ export function Topbar({ restaurantName = "My Restaurant", userName, userImage }
             <span className="hidden sm:inline text-xs text-muted-foreground">
               <Command className="inline h-3 w-3" /> K
             </span>
-            <span className="sr-only">Search</span>
+            <span className="sr-only">{t("topbar.search")}</span>
           </Button>
 
           <NotificationPanel />
+
+          <LanguageSwitcher />
 
           <ThemeToggle />
 
@@ -116,16 +121,16 @@ export function Topbar({ restaurantName = "My Restaurant", userName, userImage }
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/settings")}>
                 <User className="w-4 h-4" />
-                Profile
+                {t("topbar.profile")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push("/settings")}>
                 <Settings className="w-4 h-4" />
-                Settings
+                {t("topbar.settings")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} variant="destructive">
                 <LogOut className="w-4 h-4" />
-                Sign out
+                {t("topbar.signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
