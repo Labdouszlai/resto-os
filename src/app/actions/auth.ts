@@ -6,38 +6,39 @@ import { restaurants, members, branches } from "@/lib/db/schema";
 import { headers, cookies } from "next/headers";
 import { slugify } from "@/lib/slugify";
 
-async function setSessionCookies(authHeaders: Headers) {
-  const setCookies = authHeaders.getSetCookie?.() ?? [];
-  const c = await cookies();
-  for (const raw of setCookies) {
-    const [pair] = raw.split(";");
-    const [name, value] = pair.split("=");
-    c.set(name.trim(), value.trim(), {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
-  }
-}
-
 export async function signInAction(email: string, password: string) {
   try {
     const h = await headers();
-    const result = await auth.api.signInEmail({
-      body: {
-        email,
-        password,
-      },
+    const response = await auth.api.signInEmail({
+      body: { email, password },
       headers: h,
       asResponse: true,
     });
 
-    if (result instanceof Response) {
-      await setSessionCookies(result.headers);
+    if (response instanceof Response) {
+      const setCookieHeader = response.headers.get("set-cookie");
+      if (setCookieHeader) {
+        const c = await cookies();
+        const cookieParts = setCookieHeader.split(";");
+        const [nameValue] = cookieParts;
+        const [name, ...valueParts] = nameValue.split("=");
+        const value = valueParts.join("=");
+        const options: Record<string, any> = { path: "/" };
+        for (const part of cookieParts.slice(1)) {
+          const [key, val] = part.trim().split("=");
+          const k = key.toLowerCase();
+          if (k === "max-age") options.maxAge = parseInt(val);
+          if (k === "httponly") options.httpOnly = true;
+          if (k === "samesite") options.sameSite = val as "lax" | "strict" | "none";
+          if (k === "secure") options.secure = true;
+        }
+        if (process.env.NODE_ENV === "production") options.secure = true;
+        if (!options.sameSite) options.sameSite = "lax";
+        c.set(name.trim(), value.trim(), options);
+      }
     }
 
-    return { success: true, data: result instanceof Response ? await result.json() : result };
+    return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign in failed";
     return { success: false, error: message };
@@ -51,22 +52,37 @@ export async function signUpAction(
 ) {
   try {
     const h = await headers();
-    const result = await auth.api.signUpEmail({
-      body: {
-        name,
-        email,
-        password,
-      },
+    const response = await auth.api.signUpEmail({
+      body: { name, email, password },
       headers: h,
       asResponse: true,
     });
 
     let userData: any;
-    if (result instanceof Response) {
-      await setSessionCookies(result.headers);
-      userData = await result.json();
+    if (response instanceof Response) {
+      const setCookieHeader = response.headers.get("set-cookie");
+      if (setCookieHeader) {
+        const c = await cookies();
+        const cookieParts = setCookieHeader.split(";");
+        const [nameValue] = cookieParts;
+        const [cookieName, ...valueParts] = nameValue.split("=");
+        const value = valueParts.join("=");
+        const options: Record<string, any> = { path: "/" };
+        for (const part of cookieParts.slice(1)) {
+          const [key, val] = part.trim().split("=");
+          const k = key.toLowerCase();
+          if (k === "max-age") options.maxAge = parseInt(val);
+          if (k === "httponly") options.httpOnly = true;
+          if (k === "samesite") options.sameSite = val as "lax" | "strict" | "none";
+          if (k === "secure") options.secure = true;
+        }
+        if (process.env.NODE_ENV === "production") options.secure = true;
+        if (!options.sameSite) options.sameSite = "lax";
+        c.set(cookieName.trim(), value.trim(), options);
+      }
+      userData = await response.json();
     } else {
-      userData = result;
+      userData = response;
     }
 
     const restaurantSlug = slugify(name + "'s Restaurant");
@@ -96,7 +112,7 @@ export async function signUpAction(
       branchId: branch.id,
     });
 
-    return { success: true, data: userData };
+    return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign up failed";
     return { success: false, error: message };
@@ -105,9 +121,8 @@ export async function signUpAction(
 
 export async function signOutAction() {
   try {
-    await auth.api.signOut({
-      headers: await headers(),
-    });
+    const h = await headers();
+    await auth.api.signOut({ headers: h });
     const c = await cookies();
     c.delete("better-auth.session_token");
     return { success: true };
@@ -120,10 +135,7 @@ export async function signOutAction() {
 export async function forgotPasswordAction(email: string) {
   try {
     await auth.api.requestPasswordReset({
-      body: {
-        email,
-        redirectTo: "/reset-password",
-      },
+      body: { email, redirectTo: "/reset-password" },
     });
     return { success: true };
   } catch (error) {
@@ -135,10 +147,7 @@ export async function forgotPasswordAction(email: string) {
 export async function resetPasswordAction(password: string, token: string) {
   try {
     await auth.api.resetPassword({
-      body: {
-        newPassword: password,
-        token,
-      },
+      body: { newPassword: password, token },
     });
     return { success: true };
   } catch (error) {
