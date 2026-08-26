@@ -3,51 +3,51 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signInAction } from "@/app/actions/auth";
+import { signIn } from "@/lib/auth/client";
 import { useTranslation } from "@/i18n/provider";
 
 export default function SignInPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const signInSchema = z.object({
-    email: z.string().email(t("auth.enterValidEmail")),
-    password: z.string().min(6, t("auth.passwordMinLength")),
-  });
-
-  type SignInForm = z.infer<typeof signInSchema>;
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignInForm>({
-    resolver: zodResolver(signInSchema),
-  });
-
-  async function onSubmit(data: SignInForm) {
-    setLoading(true);
-    try {
-      const result = await signInAction(data.email, data.password);
-      if (result.success) {
-        toast.success(t("auth.signedInSuccessfully"));
-        router.push("/dashboard");
-      } else {
-        toast.error(result.error || t("auth.invalidCredentials"));
-      }
-    } catch {
-      toast.error(t("auth.unexpectedError"));
-    } finally {
-      setLoading(false);
+  function validate(): boolean {
+    const newErrors: typeof errors = {};
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = t("auth.enterValidEmail");
     }
+    if (!password || password.length < 6) {
+      newErrors.password = t("auth.passwordMinLength");
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setLoading(true);
+    signIn.email(
+      { email, password, callbackURL: "/dashboard" },
+      {
+        onSuccess: () => {
+          toast.success(t("auth.signedInSuccessfully"));
+          router.push("/dashboard");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message || t("auth.invalidCredentials"));
+        },
+      }
+    );
+    setLoading(false);
   }
 
   return (
@@ -59,7 +59,7 @@ export default function SignInPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">{t("auth.email")}</Label>
           <Input
@@ -67,10 +67,11 @@ export default function SignInPage() {
             type="email"
             placeholder="name@restaurant.com"
             disabled={loading}
-            {...register("email")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p className="text-xs text-destructive">{errors.email}</p>
           )}
         </div>
 
@@ -81,10 +82,11 @@ export default function SignInPage() {
             type="password"
             placeholder={t("auth.enterPassword")}
             disabled={loading}
-            {...register("password")}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
           {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
+            <p className="text-xs text-destructive">{errors.password}</p>
           )}
         </div>
 

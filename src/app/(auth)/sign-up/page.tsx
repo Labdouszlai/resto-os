@@ -3,58 +3,56 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signUpAction } from "@/app/actions/auth";
+import { signUp } from "@/lib/auth/client";
+import { setupRestaurantAction } from "@/app/actions/auth";
 import { useTranslation } from "@/i18n/provider";
 
 export default function SignUpPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const signUpSchema = z
-    .object({
-      name: z.string().min(2, t("auth.nameMinLength")),
-      email: z.string().email(t("auth.enterValidEmail")),
-      password: z.string().min(6, t("auth.passwordMinLength")),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: t("auth.passwordsDontMatch"),
-      path: ["confirmPassword"],
-    });
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+    if (!name || name.length < 2) newErrors.name = t("auth.nameMinLength");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = t("auth.enterValidEmail");
+    if (!password || password.length < 6) newErrors.password = t("auth.passwordMinLength");
+    if (password !== confirmPassword) newErrors.confirmPassword = t("auth.passwordsDontMatch");
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
-  type SignUpForm = z.infer<typeof signUpSchema>;
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignUpForm>({
-    resolver: zodResolver(signUpSchema),
-  });
-
-  async function onSubmit(data: SignUpForm) {
     setLoading(true);
-    try {
-      const result = await signUpAction(data.name, data.email, data.password);
-      if (result.success) {
-        toast.success(t("auth.accountCreatedSuccessfully"));
-        router.push("/dashboard");
-      } else {
-        toast.error(result.error || t("auth.failedToCreateAccount"));
+    signUp.email(
+      { name, email, password, callbackURL: "/dashboard" },
+      {
+        onSuccess: async (ctx) => {
+          const userId = ctx.data?.user?.id;
+          if (userId) {
+            await setupRestaurantAction(userId, name);
+          }
+          toast.success(t("auth.accountCreatedSuccessfully"));
+          router.push("/dashboard");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message || t("auth.failedToCreateAccount"));
+        },
       }
-    } catch {
-      toast.error(t("auth.unexpectedError"));
-    } finally {
-      setLoading(false);
-    }
+    );
+    setLoading(false);
   }
 
   return (
@@ -66,7 +64,7 @@ export default function SignUpPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">{t("auth.fullName")}</Label>
           <Input
@@ -74,10 +72,11 @@ export default function SignUpPage() {
             type="text"
             placeholder="John Doe"
             disabled={loading}
-            {...register("name")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
           {errors.name && (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
+            <p className="text-xs text-destructive">{errors.name}</p>
           )}
         </div>
 
@@ -88,10 +87,11 @@ export default function SignUpPage() {
             type="email"
             placeholder="name@restaurant.com"
             disabled={loading}
-            {...register("email")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
+            <p className="text-xs text-destructive">{errors.email}</p>
           )}
         </div>
 
@@ -102,10 +102,11 @@ export default function SignUpPage() {
             type="password"
             placeholder={t("auth.atLeast6Chars")}
             disabled={loading}
-            {...register("password")}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
           {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
+            <p className="text-xs text-destructive">{errors.password}</p>
           )}
         </div>
 
@@ -116,11 +117,12 @@ export default function SignUpPage() {
             type="password"
             placeholder={t("auth.confirmYourPassword")}
             disabled={loading}
-            {...register("confirmPassword")}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
           {errors.confirmPassword && (
             <p className="text-xs text-destructive">
-              {errors.confirmPassword.message}
+              {errors.confirmPassword}
             </p>
           )}
         </div>
