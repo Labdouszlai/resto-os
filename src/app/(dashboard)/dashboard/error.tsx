@@ -11,7 +11,7 @@ export default function DashboardError({
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
         <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
-        <p className="text-muted-foreground mb-4">{error.message || "Failed to load dashboard"}</p>
+        <p className="text-muted-foreground mb-4">Failed to load dashboard. Please try again.</p>
         <button
           onClick={reset}
           className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90"
