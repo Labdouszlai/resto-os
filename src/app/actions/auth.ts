@@ -8,12 +8,13 @@ import { slugify } from "@/lib/slugify";
 
 export async function signInAction(email: string, password: string) {
   try {
+    const h = await headers();
     const result = await auth.api.signInEmail({
       body: {
         email,
         password,
-        callbackURL: "/dashboard",
       },
+      headers: h,
     });
     return { success: true, data: result };
   } catch (error) {
@@ -28,12 +29,14 @@ export async function signUpAction(
   password: string
 ) {
   try {
+    const h = await headers();
     const result = await auth.api.signUpEmail({
       body: {
         name,
         email,
         password,
       },
+      headers: h,
     });
 
     const restaurantSlug = slugify(name + "'s Restaurant");

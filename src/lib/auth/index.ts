@@ -3,8 +3,11 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
 import * as schema from "../db/schema";
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "resto-os-dev-secret-change-in-production",
+  baseURL: BASE_URL,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -45,12 +48,19 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
+    cookieCache: {
+      enabled: true,
+    },
   },
   user: {
     additionalFields: {},
   },
   advanced: {
     cookiePrefix: "better-auth",
+    defaultCookieAttributes: {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
   },
 });
 
